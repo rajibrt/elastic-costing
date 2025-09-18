@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elastic Costing Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Noto+Sans+Bengali&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: 'Noto Sans Bengali', sans-serif;
+      }
+      .font-inter {
+        font-family: 'Inter', sans-serif;
+      }
+
+      /* ===== PRINT: A4 single page, hide UI, show only report ===== */
+      @media print {
+        @page {
+          size: A4;
+          margin: 10mm;
+        }
+
+        /* স্ক্রিনের flex সেন্টারিং নিষ্ক্রিয় করুন */
+        html,
+        body {
+          height: auto !important;
+          background: #fff !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        body {
+          display: block !important;
+          min-height: auto !important;
+          align-items: flex-start !important;
+          justify-content: flex-start !important;
+        }
+        /* ইনপুট/UI হাইড, শুধু রিপোর্ট দেখান (এগুলো আগের মতই থাকলে রাখুন) */
+        .print-hidden {
+          display: none !important;
+        }
+        .print-only {
+          display: block !important;
+        }
+
+        /* আউটার র‍্যাপারকে সাধারণ ব্লক বানান যাতে টপ থেকে শুরু হয় */
+        /* আপনার বাইরের কন্টেইনারে একটি আইডি দিন, যেমন: id="wrap" */
+        #wrap {
+          box-shadow: none !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: auto !important;
+        }
+
+        /* রিপোর্ট সেকশন টপ থেকে শুরু হবে */
+        #printSection {
+          margin: 0 !important;
+          padding: 20px !important;
+          border: 1px solid #ccc !important;
+          border-radius: 6px !important;
+          background: #fff !important;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* ভেতরের ব্লকগুলো মাঝপথে ব্রেক না হোক */
+        .no-break {
+          page-break-inside: avoid;
+        }
+
+        /* চাইলে কিছুটা কমপ্যাক্ট টাইপোগ্রাফি */
+        #printSection h1 {
+          font-size: 18pt;
+          margin: 0 0 6pt 0;
+        }
+        #printSection h2 {
+          font-size: 14pt;
+          margin: 8pt 0;
+        }
+        #printSection h3 {
+          font-size: 12pt;
+          margin: 6pt 0;
+        }
+        #printSection p,
+        #printSection li,
+        #printSection div {
+          font-size: 11pt;
+          line-height: 1.4;
+        }
+        #printSection .grid {
+          gap: 8pt;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg p-6 w-full max-w-4xl">
+      <!-- ===== UI + Header (hidden on print) ===== -->
+      <div class="print-hidden">
+        <div class="text-center mb-2">
+          <h1 class="text-3xl font-bold text-gray-800 font-inter">
+            Jake Trims Export Ltd.
+          </h1>
+          <p class="text-md text-gray-600">
+            Uttar Bhuighar, Fatullah, Narayanganj
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-bold text-center mb-2 text-blue-600">
+          ইলাস্টিক কস্টিং ক্যালকুলেটর
+        </h2>
+        <h2 class="text-sm font-bold text-center mb-6 text-gray-400">
+          Developed By Kayum
+        </h2>
+
+        <!-- Inputs -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-gray-700">ক্লায়েন্ট নাম</label>
+            <input
+              type="text"
+              id="clientName"
+              placeholder="যেমন: Noman Accessories"
+              class="w-full px-3 py-2 border rounded"
+            />
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700">সাইজ (যেমনঃ 1 inch)</label>
+              <input
+                type="text"
+                id="sizeLabel"
+                value="1 inch"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Profit (%)</label>
+              <input
+                type="number"
+                id="profitPercent"
+                step="0.01"
+                value="30"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Wastage (%)</label>
+              <input
+                type="number"
+                id="wastagePercent"
+                step="0.01"
+                value="3"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Yarn Weight (gram)</label>
+              <input
+                type="number"
+                id="yarnWeight"
+                step="0.001"
+                value="2.852"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Yarn Rate (tk per lbs)</label>
+              <input
+                type="number"
+                id="yarnRate"
+                step="0.01"
+                value="75"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Rubber Weight (gram)</label>
+              <input
+                type="number"
+                id="rubberWeight"
+                step="0.001"
+                value="0.9"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700"
+                >Rubber Rate (tk per lbs)</label
+              >
+              <input
+                type="number"
+                id="rubberRate"
+                step="0.01"
+                value="175"
+                class="w-full px-3 py-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label class="block text-gray-700">Dollar Rate (৳)</label>
+              <input
+                type="number"
+                id="usdRate"
+                step="0.01"
+                value="110"
+                class="w-full px-3 py-2 border rounded"
+                oninput="convertToUSD()"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700">মন্তব্য / বিস্তারিত তথ্য</label>
+            <textarea
+              id="comments"
+              rows="4"
+              placeholder="যেমন: প্রসেস - হিট সেট, কালার - কালো"
+              class="w-full px-3 py-2 border rounded"
+            ></textarea>
+          </div>
+
+          <div class="flex gap-4 mt-4">
+            <button
+              onclick="calculateCost()"
+              class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            >
+              হিসাব করুন
+            </button>
+            <button
+              onclick="printReport()"
+              class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+            >
+              🖨️ রিপোর্ট প্রিন্ট করুন
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Report Only (visible on print) ===== -->
+      <div
+        id="printSection"
+        class="mt-8 text-sm space-y-4 bg-white p-6 rounded border print-only"
+        style="display: none"
+      >
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <script>
+      let finalCostValue = 0
+
+      function calculateCost() {
+        const clientName = document.getElementById('clientName').value || 'N/A'
+        const sizeLabel = document.getElementById('sizeLabel').value || 'N/A'
+        const yarnWeight = parseFloat(
+          document.getElementById('yarnWeight').value
+        )
+        const yarnRate = parseFloat(document.getElementById('yarnRate').value)
+        const rubberWeight = parseFloat(
+          document.getElementById('rubberWeight').value
+        )
+        const rubberRate = parseFloat(
+          document.getElementById('rubberRate').value
+        )
+        const profitPercent =
+          parseFloat(document.getElementById('profitPercent').value) || 0
+        const wastagePercent =
+          parseFloat(document.getElementById('wastagePercent').value) || 3
+        const usdRate =
+          parseFloat(document.getElementById('usdRate').value) || 110
+        const commentsRaw = document.getElementById('comments').value || ''
+        const commentsFormatted = commentsRaw.replace(/\n/g, '<br>')
+
+        const lbsFactor = 453.592
+        const yarnCost = (yarnWeight / lbsFactor) * yarnRate
+        const rubberCost = (rubberWeight / lbsFactor) * rubberRate
+        const subtotal = yarnCost + rubberCost
+        const withWastage = subtotal * (1 + wastagePercent / 100)
+        const finalCost = withWastage * (1 + profitPercent / 100)
+        finalCostValue = finalCost
+        const finalUSD = finalCost / usdRate
+
+        document.getElementById('printSection').style.display = 'block'
+        document.getElementById('printSection').innerHTML = `
+        <div class="text-center no-break">
+          <h1 class="text-2xl font-bold text-gray-800 font-inter">Jake Trims Export Ltd.</h1>
+          <p class="text-sm text-gray-600">Uttar Bhuighar, Fatullah, Narayanganj</p>
+          <p class="text-sm text-gray-700 mt-1"><strong>Client:</strong> ${clientName}</p>
+        </div>
+
+        <h2 class="text-xl font-bold text-center my-4 no-break">🧾 ইলাস্টিক কস্টিং রিপোর্ট — সাইজঃ ${sizeLabel}</h2>
+
+        <div class="my-4 p-4 border border-dashed rounded bg-gray-50 no-break">
+          <h3 class="font-semibold mb-1 text-gray-800">মন্তব্য:</h3>
+          <p class="text-gray-700 text-sm leading-relaxed">${commentsFormatted}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 no-break">
+          <div class="text-gray-700 space-y-2">
+            <p><strong>Yarn Weight:</strong> ${yarnWeight} gm</p>
+            <p><strong>Yarn Rate:</strong> ৳${yarnRate} /lbs</p>
+            <p><strong>Rubber Weight:</strong> ${rubberWeight} gm</p>
+            <p><strong>Rubber Rate:</strong> ৳${rubberRate} /lbs</p>
+            <p><strong>Wastage:</strong> ${wastagePercent}%</p>
+            <p><strong>Profit:</strong> ${profitPercent}%</p>
+            <p><strong>Dollar Rate:</strong> ৳${usdRate}</p>
+          </div>
+
+          <div class="text-gray-800 space-y-2">
+            <p><strong>Yarn Cost:</strong> ৳${yarnCost.toFixed(4)}</p>
+            <p><strong>Rubber Cost:</strong> ৳${rubberCost.toFixed(4)}</p>
+            <p><strong>Subtotal:</strong> ৳${subtotal.toFixed(4)}</p>
+            <p><strong>+ ${wastagePercent}% Wastage:</strong> ৳${withWastage.toFixed(4)}</p>
+            <p><strong>+ Gross Profit:</strong> ৳${(finalCost - withWastage).toFixed(
+              4
+            )}</p>
+            <p class="font-bold text-blue-600"><strong>Final Cost (TK):</strong> ৳${finalCost.toFixed(
+              4
+            )}</p>
+            <p class="font-bold text-green-600"><strong>Final Cost (USD):</strong> $${finalUSD.toFixed(
+              4
+            )}</p>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-6 text-xs text-gray-500 no-break">
+          <p>Generated on: ${new Date().toLocaleString()}</p>
+          <p>Developed By Md. Abdul Kayum</p>
+        </div>
+      `
+      }
+
+      function convertToUSD() {
+        if (finalCostValue > 0) {
+          calculateCost()
+        }
+      }
+
+      function printReport() {
+        window.print()
+      }
+    </script>
+  </body>
+</html>
